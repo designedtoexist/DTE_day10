@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Designed to Exist: portfolio websites and GitHub profiles with a living background. Day 10: the WebGL shader lab.">
+<link rel="icon" type="image/png" href="/favicon.png">
+<title>Shader Lab · Designed to Exist</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;600;800&family=Manrope:wght@400;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--a:#c13cff;--b:#ffd0f5;--bg:#05060a;--t:#eef0ff;--d:'Unbounded','Arial Black',system-ui,sans-serif;--m:'Manrope','Segoe UI',system-ui,sans-serif;--c:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;--e:cubic-bezier(.16,1,.3,1);color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth;background:var(--bg)}*{box-sizing:border-box;margin:0}
+body{font-family:var(--m);color:var(--t);background:var(--bg);line-height:1.6;overflow-x:hidden;font-size:clamp(15px,1.25vw,17px)}
+::selection{background:var(--a);color:#000}a{color:inherit}button{font:inherit;color:inherit}
+#gl{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+.nav{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:40;display:flex;justify-content:space-between;align-items:center;padding:16px 4vw;mix-blend-mode:difference;color:#fff;font:600 13px var(--m);letter-spacing:.1em;text-transform:uppercase}.nav b{font:800 15px var(--d);letter-spacing:-.02em}.nav a{text-decoration:none;margin-left:22px;opacity:.85;transition:opacity .4s}.nav a:hover{opacity:1}
+main{position:relative;z-index:5}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 4vw 14vh}
+h1{font:800 clamp(40px,9.6vw,170px)/.92 var(--d);letter-spacing:-.05em;text-transform:uppercase;mix-blend-mode:difference;color:#fff}
+h1 span{display:block;overflow:hidden;padding-bottom:.06em}h1 i{display:block;font-style:normal;transform:translateY(105%);transition:transform 1.4s var(--e)}body.ready h1 i{transform:none}body.ready h1 span+span i{transition-delay:.12s}
+.sub{max-width:520px;margin-top:3vh;font-size:clamp(16px,1.6vw,20px);opacity:0;transition:opacity 1.6s .6s}body.ready .sub{opacity:.9}
+.cta{margin-top:3vh;display:flex;gap:12px;flex-wrap:wrap;opacity:0;transition:opacity 1.6s .9s}body.ready .cta{opacity:1}
+.bt{display:inline-block;padding:13px 26px;border-radius:40px;font:600 14px var(--m);letter-spacing:.06em;text-decoration:none;background:#fff;color:#05060a;border:0;cursor:pointer;transition:transform .5s var(--e),background .4s,color .4s}.bt:hover{transform:translateY(-3px) scale(1.04);background:var(--a);color:#fff}.bt.g{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.3)}.bt.g:hover{background:rgba(255,255,255,.2)}
+section.s{padding:9vh 4vw}.lab{font:400 12px var(--c);letter-spacing:.2em;text-transform:uppercase;color:var(--b);margin-bottom:18px;display:block}
+h2{font:800 clamp(28px,4.6vw,70px)/1 var(--d);letter-spacing:-.04em;text-transform:uppercase;margin-bottom:5vh}h2 em{font-style:normal;color:var(--b)}
+.g{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.tile{--mx:50%;--my:50%;--rx:0deg;--ry:0deg;position:relative;border-radius:28px;padding:clamp(20px,2.4vw,34px);background:rgba(7,8,16,.58);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);overflow:hidden;transform:perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));transition:transform .8s var(--e),opacity 1.1s var(--e),clip-path 1.3s var(--e);clip-path:inset(100% 0 0 0 round 28px);opacity:0}
+.tile.in{clip-path:inset(0 round 28px);opacity:1}.tile:hover{transition:transform .15s}
+.tile:before{content:"";position:absolute;inset:0;background:radial-gradient(420px circle at var(--mx) var(--my),color-mix(in srgb,var(--a) 28%,transparent),transparent 60%);opacity:0;transition:opacity .5s;pointer-events:none}.tile:hover:before{opacity:1}
+.tile>*{position:relative}
+.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}.r2{grid-row:span 2}
+.tile h3{font:600 clamp(18px,2vw,28px)/1.1 var(--d);letter-spacing:-.03em;margin:10px 0 8px}.tile p{opacity:.85}.tile .n{font:400 12px var(--c);color:var(--b);letter-spacing:.2em}
+.big{font:800 clamp(60px,9vw,150px)/.9 var(--d);letter-spacing:-.06em;background:linear-gradient(120deg,var(--a),var(--b));-webkit-background-clip:text;background-clip:text;color:transparent}
+.fr{position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.15);margin-bottom:14px}.fr div{position:absolute;inset:0;display:grid;place-items:center;font:600 20px var(--d);text-align:center;padding:10%;transition:opacity 1s}.fr.live div{opacity:0}
+.fr iframe{position:absolute;left:0;top:0;border:0;width:1280px;transform-origin:0 0;pointer-events:none;background:#fff;opacity:0;transition:opacity 1s}.fr.live iframe{opacity:1}
+.pj{text-decoration:none;display:block;color:inherit}.pj .o{font:600 13px var(--m);color:var(--b);margin-top:8px;display:inline-block;transition:translate .4s var(--e)}.pj:hover .o{translate:6px 0}
+.lbx{display:grid;grid-template-columns:minmax(200px,.7fr) 1.6fr;gap:22px}.ps{display:flex;flex-direction:column;gap:6px}.ps button{text-align:left;padding:9px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);cursor:pointer;font:600 13px var(--m);transition:background .3s,border-color .3s}.ps button:hover{background:rgba(255,255,255,.12)}.ps button.on{background:var(--a);border-color:var(--a);color:#fff}
+.sl{margin-top:12px;font:400 11px var(--c);letter-spacing:.14em;text-transform:uppercase;opacity:.85}.sl input{width:100%;accent-color:var(--a)}
+.ed{display:flex;flex-direction:column;gap:8px;min-width:0}.ed textarea{width:100%;height:clamp(260px,34vw,380px);resize:vertical;background:rgba(0,0,0,.55);color:#dfe4ff;border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px;font:13px/1.5 var(--c);tab-size:2;outline:none}.ed textarea:focus{border-color:var(--a)}
+#st{font:400 12px var(--c);min-height:2.6em;white-space:pre-wrap}#st.ok{color:#7dffb0}#st.er{color:#ff7a8a}
+.stp .big{font-size:clamp(50px,6vw,90px)}
+#ct{text-align:center;padding:16vh 6vw}#ct h2{font-size:clamp(34px,8vw,130px)}#ct p{max-width:460px;margin:0 auto 4vh}
+.dock{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));translate:-50% 0;z-index:45;display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:40px;background:rgba(8,9,18,.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.18);font:600 12px var(--m);white-space:nowrap;max-width:96vw}
+.dock button.a{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:none;cursor:pointer;transition:background .3s}.dock button.a:hover{background:var(--a)}
+.dock .nm{min-width:110px;text-align:center}.dock .pd{display:flex;gap:6px}.dock .pd i{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:scale .4s var(--e)}.dock .pd i.on{border-color:#fff;scale:1.25}.dock .fp{font:400 11px var(--c);opacity:.6}
+#ld{position:fixed;inset:0;z-index:200;background:#03040a;display:grid;place-items:center;-webkit-mask:radial-gradient(circle at 50% 50%,transparent var(--r,0px),#000 calc(var(--r,0px) + 3px));mask:radial-gradient(circle at 50% 50%,transparent var(--r,0px),#000 calc(var(--r,0px) + 3px))}#ld.x{pointer-events:none}
+#ld .l{font:400 clamp(12px,1.5vw,15px)/2 var(--c);color:#9be9ff;min-width:min(86vw,360px)}#ld .l div{opacity:0;transition:opacity .3s}#ld .l div.on{opacity:1}#ld .l b{color:#7dffb0;font-weight:400}
+#ld .p{margin-top:18px;height:3px;background:rgba(255,255,255,.12)}#ld .p i{display:block;height:100%;width:0;background:linear-gradient(90deg,#4d7cff,#c13cff,#ffd0f5)}#ld h4{font:800 clamp(26px,5vw,44px) var(--d);letter-spacing:-.04em;text-transform:uppercase;margin-bottom:12px}
+@media(max-width:860px){.g{grid-template-columns:1fr 1fr}.c4,.c5,.c6,.c7,.c8,.c12{grid-column:span 2}.r2{grid-row:auto}.lbx{grid-template-columns:1fr}.nav a:not(:last-child){display:none}.dock .fp,.dock .pd{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<nav class="nav"><b>Designed to Exist</b><span><a href="#about">About</a><a href="#work">Work</a><a href="#lab">Lab</a><a href="#ct">Contact</a></span></nav>
+<main>
+<header class="hero"><h1><span><i>Designed</i></span><span><i>to Exist.</i></span></h1><p class="sub">Websites and GitHub profiles with a living background. This sky is a real shader running on your GPU, and in a minute you’ll be able to edit it.</p><div class="cta"><a class="bt" href="#lab">Edit the sky ↓</a><a class="bt g" href="#work">See the work</a></div></header>
+
+<section class="s" id="about"><span class="lab">01 / the lab</span><h2>We write code that <em>looks like light.</em></h2>
+<div class="g">
+<div class="tile c7 r2"><span class="n">ABOUT</span><h3>One studio, zero templates.</h3><p>Designed to Exist is a small lab making animated portfolio websites and GitHub profiles. Every build is written from scratch around one person: no themes, no kits, just math and taste.</p><div class="big" style="margin-top:24px">DAY<br><span data-c="10">0</span>/50</div></div>
+<div class="tile c5"><span class="n">01 · WEBSITES</span><h3>Living portfolios</h3><p>Sites that react to your cursor, your scroll and time, built around your story.</p></div>
+<div class="tile c5"><span class="n">02 · PROFILES</span><h3>GitHub, rendered</h3><p>READMEs with animated heroes and little details that make people stop.</p></div>
+<div class="tile c12"><span class="n">03 · HANDOVER</span><h3>Source, not lock-in.</h3><p>You get every file and publish anywhere you like. No subscription, no strings.</p></div></div></section>
+
+<section class="s" id="work"><span class="lab">02 / selected work</span><h2>Things we <em>rendered.</em></h2>
+<div class="g" id="wk">
+<a class="tile pj c7" href="https://designed-to-exist.netlify.app/" target="_blank" rel="noopener"><div class="fr" data-u="https://designed-to-exist.netlify.app/"><div>Marlo Reyes</div></div><span class="n">PORTFOLIO · SCROLL DIVE</span><h3>Marlo Reyes</h3><p>A deep-sea illustration portfolio where the light fades as you scroll.</p><span class="o">Open site →</span></a>
+<a class="tile pj c5" href="https://night-market-dte.vercel.app/" target="_blank" rel="noopener"><div class="fr" data-u="https://night-market-dte.vercel.app/"><div>The Night Market</div></div><span class="n">EXPERIENCE · WALKABLE</span><h3>The Night Market</h3><p>A lantern-lit market you wander with scroll, swipe or W and S.</p><span class="o">Open site →</span></a>
+<a class="tile pj c5" href="https://small-weather-mu.vercel.app/" target="_blank" rel="noopener"><div class="fr" data-u="https://small-weather-mu.vercel.app/"><div>Small Weather</div></div><span class="n">INTERACTIVE · MUSEUM</span><h3>Museum of Small Weather</h3><p>Tiny storms in glass jars to wipe, shake and bottle.</p><span class="o">Open site →</span></a>
+<a class="tile pj c7" href="https://morrow-and-moss.netlify.app" target="_blank" rel="noopener"><div class="fr" data-u="https://morrow-and-moss.netlify.app"><div>Morrow &amp; Moss</div></div><span class="n">STUDIO · JOURNAL</span><h3>Morrow &amp; Moss</h3><p>A botanical studio’s home with an archive that unrolls as you move.</p><span class="o">Open site →</span></a></div></section>
+
+<section class="s" id="lab"><span class="lab">03 / the toy · shader playground</span><h2>Edit the <em>sky.</em></h2>
+<div class="g"><div class="tile c12"><div class="lbx"><div><div class="ps" id="ps"></div>
+<div class="sl">speed<input type="range" id="sp" min="0" max="3" step=".05" value="1" aria-label="Speed"></div><div class="sl">scale<input type="range" id="sc" min=".5" max="2.5" step=".05" value="1" aria-label="Scale"></div>
+<p style="font:400 11px var(--c);opacity:.6;margin-top:14px">click the page to send a shockwave · move the cursor to stir it</p></div>
+<div class="ed"><textarea id="code" spellcheck="false" aria-label="GLSL code"></textarea><div id="st"></div><span style="font:400 11px var(--c);opacity:.55">available: u_time, u_mouse, u_scroll, u_speed, u_scale, pal(t), fbm(p), noise(p), hash(p), mouseUV()</span></div></div></div></div></section>
+
+<section class="s" id="pr"><span class="lab">04 / the process</span><h2>Four <em>passes.</em></h2>
+<div class="g stp"><div class="tile c4"><div class="big">01</div><h3>Say hello</h3><p>Send us a DM and tell us who you are.</p></div><div class="tile c4"><div class="big">02</div><h3>Prototype</h3><p>One bold idea, drawn only for you.</p></div><div class="tile c4"><div class="big">03</div><h3>Render</h3><p>Animated, responsive, tuned to the last pixel.</p></div><div class="tile c12" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap"><div class="big" style="font-size:clamp(50px,6vw,90px)">04</div><div><h3>Hand over</h3><p>The files are yours. Publish them anywhere.</p></div></div></div></section>
+
+<section id="ct"><span class="lab">05 / contact</span><h2>Let’s render <em>something.</em></h2><p>Message us on Instagram, or browse the code on GitHub.</p><a class="bt" href="https://www.instagram.com/designed_toexist" target="_blank" rel="noopener">Instagram ↗</a> <a class="bt g" href="https://github.com/designedtoexist" target="_blank" rel="noopener">GitHub ↗</a><p style="margin-top:6vh;font:400 11px var(--c);opacity:.5;letter-spacing:.12em">PRESS R FOR RAINBOW · ← → CHANGE SHADER · 1-4 PALETTE</p></section>
+</main>
+<div class="dock" id="dock"><button class="a" id="pv" aria-label="Previous shader">‹</button><span class="nm" id="nm"></span><button class="a" id="nx" aria-label="Next shader">›</button><span class="pd" id="pd"></span><span class="fp" id="fp"></span></div>
+<div id="ld"><div><h4>Shader Lab</h4><div class="l" id="ll"><div>compiling fragment shader … <b>OK</b></div><div>linking program … <b>OK</b></div><div>uploading uniforms … <b>OK</b></div><div>warming up the sky … <b>OK</b></div></div><div class="p"><i id="lb"></i></div></div></div>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},cl=function(v,a,b){return Math.max(a,Math.min(b,v))};
+var HEAD='precision highp float;\nuniform vec2 u_res,u_mouse;uniform float u_time,u_scroll,u_speed,u_scale;uniform vec3 u_click,u_c0,u_c1,u_c2,u_c3;\nfloat hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}\nfloat noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}\nfloat fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise(p);p=p*2.02+vec2(1.7,9.2);a*=.5;}return v;}\nvec3 pal(float t){t=clamp(t,0.,1.)*3.;if(t<1.)return mix(u_c0,u_c1,t);if(t<2.)return mix(u_c1,u_c2,t-1.);return mix(u_c2,u_c3,t-2.);}\nvec2 mouseUV(){return (u_mouse-.5)*vec2(u_res.x/u_res.y,1.);}\n';
+var TAIL='\nvoid main(){vec2 uv=(gl_FragCoord.xy-.5*u_res)/u_res.y;uv.y+=u_scroll*.35;vec3 c=render(uv);vec2 cm=(u_click.xy-.5)*vec2(u_res.x/u_res.y,1.);cm.y+=u_scroll*.35;float ct=u_time-u_click.z;float ring=exp(-pow((length(uv-cm)-ct*.8)*12.,2.))*exp(-ct*1.1);c+=pal(.95)*ring*.7;vec2 q=gl_FragCoord.xy/u_res-.5;c*=1.-.45*dot(q,q)*2.;c+=(hash(gl_FragCoord.xy+u_time)-.5)/200.;gl_FragColor=vec4(c,1.);}';
+var HL=HEAD.split('\n').length-1;
+var P=[
+['Aurora flow',"vec3 render(vec2 uv){\n  float t = u_time*u_speed*.15;\n  vec2 p = uv*u_scale*1.4;\n  float a = fbm(p + vec2(t, 0.));\n  float b = fbm(p + a*2. + vec2(0., -t*1.3));\n  float c = fbm(p*1.3 + b*2.4 + t);\n  float glow = exp(-distance(uv, mouseUV())*3.)*.35;\n  float v = clamp(c*1.4 + glow - .1, 0., 1.);\n  return pal(v) * (.55 + .75*b);\n}"],
+['Liquid marble',"vec3 render(vec2 uv){\n  float t = u_time*u_speed*.12;\n  vec2 p = uv*u_scale*1.6;\n  for(int i=1;i<5;i++){\n    float f = float(i);\n    p += .55/f * vec2(sin(p.y*f*1.3+t*f), cos(p.x*f*1.1-t));\n  }\n  float v = .5+.5*sin(p.x*2. + p.y*2. + t*2. + length(uv-mouseUV())*3.);\n  return pal(v) * (.6 + .5*fbm(p));\n}"],
+['Voronoi cells',"vec3 render(vec2 uv){\n  vec2 p = uv*u_scale*5. + vec2(u_time*u_speed*.2, 0.);\n  vec2 i = floor(p), f = fract(p);\n  float md = 9., m2 = 9.;\n  for(int y=-1;y<=1;y++) for(int x=-1;x<=1;x++){\n    vec2 g = vec2(float(x), float(y));\n    vec2 o = vec2(hash(i+g), hash(i+g+7.3));\n    o = .5+.5*sin(u_time*u_speed*.6 + 6.2831*o);\n    vec2 r = g+o-f;\n    float d = dot(r,r);\n    if(d<md){ m2=md; md=d; } else if(d<m2){ m2=d; }\n  }\n  float edge = 1. - smoothstep(0., .08, sqrt(m2)-sqrt(md));\n  return pal(sqrt(md)*1.2)*.8 + pal(.95)*edge*.9;\n}"],
+['Lava lamp',"vec3 render(vec2 uv){\n  float t = u_time*u_speed*.3;\n  float s = 0.;\n  for(int i=0;i<6;i++){\n    float f = float(i);\n    vec2 c = vec2(sin(t*(.7+f*.23)+f*2.1), cos(t*(.5+f*.19)+f*1.3))*vec2(.7,.4)*u_scale;\n    s += .06/(dot(uv-c,uv-c)+.02);\n  }\n  vec2 m = mouseUV();\n  s += .08/(dot(uv-m,uv-m)+.015);\n  float v = smoothstep(.6, 3., s);\n  return pal(v) + pal(.9)*smoothstep(2., 6., s)*.4;\n}"],
+['Ripples',"vec3 render(vec2 uv){\n  vec2 m = mouseUV();\n  float d = length(uv-m);\n  float w = sin(d*30.*u_scale - u_time*u_speed*3.) * exp(-d*2.);\n  float base = fbm(uv*3.*u_scale + u_time*u_speed*.1);\n  float v = .45*base + .35*w + .3;\n  return pal(clamp(v, 0., 1.));\n}"]];
+var PL=[['Ultraviolet',['#0a0420','#3b1a8c','#c13cff','#ffd0f5']],['Ember',['#120302','#7a1408','#ff6a1a','#ffe9a8']],['Glacier',['#02101a','#0b4f6c','#2fd1c5','#e8fffb']],['Acid',['#050a02','#1d4d12','#a6ff00','#f4ffd0']]];
+function rgb(h){var n=parseInt(h.slice(1),16);return[(n>>16)/255,(n>>8&255)/255,(n&255)/255]}
+var cv=$('gl'),gl=cv.getContext('webgl',{antialias:false,powerPreference:'high-performance'}),prog=null,U={},cur=0,pal=0,speed=1,scale=1,mx=.5,my=.5,tmx=.5,tmy=.5,click=[.5,.5,-99],rainbow=false,hue=0;
+var code=$('code'),st=$('st'),ok=!!gl;
+function mkS(t,s){var sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);return sh}
+function build(body){if(!ok)return;var t0=performance.now(),vs=mkS(gl.VERTEX_SHADER,'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}'),fs=mkS(gl.FRAGMENT_SHADER,HEAD+body+TAIL);
+ if(!gl.getShaderParameter(fs,gl.COMPILE_STATUS)){var l=gl.getShaderInfoLog(fs)||'compile error';l=l.replace(/ERROR: 0:(\d+)/g,function(m,n){return 'line '+Math.max(1,n-HL)});st.className='er';st.textContent='✗ '+l.split('\n')[0];return false}
+ var pr=gl.createProgram();gl.attachShader(pr,vs);gl.attachShader(pr,fs);gl.bindAttribLocation(pr,0,'p');gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS)){st.className='er';st.textContent='✗ link failed';return false}
+ if(prog)gl.deleteProgram(prog);prog=pr;gl.useProgram(pr);U={};['u_res','u_mouse','u_time','u_scroll','u_speed','u_scale','u_click','u_c0','u_c1','u_c2','u_c3'].forEach(function(n){U[n]=gl.getUniformLocation(pr,n)});st.className='ok';st.textContent='✓ compiled in '+(performance.now()-t0).toFixed(1)+' ms';return true}
+if(ok){var b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0)}
+else{document.body.style.background='radial-gradient(circle at 30% 30%,#3b1a8c,#05060a 70%)';st.className='er';st.textContent='WebGL is not available in this browser.'}
+function setP(i){cur=i;code.value=P[i][1];build(code.value);$('nm').textContent=P[i][0];[].forEach.call($('ps').children,function(b,j){b.classList.toggle('on',j===i)})}
+P.forEach(function(p,i){var b=document.createElement('button');b.textContent=p[0];b.onclick=function(){setP(i)};$('ps').appendChild(b)});
+function setPal(i){pal=i;var c=PL[i][1];document.documentElement.style.setProperty('--a',c[2]);document.documentElement.style.setProperty('--b',c[3]);[].forEach.call($('pd').children,function(d,j){d.classList.toggle('on',j===i)})}
+PL.forEach(function(p,i){var d=document.createElement('i');d.style.background='linear-gradient(135deg,'+p[1][1]+','+p[1][2]+')';d.title=p[0];d.onclick=function(){setPal(i)};$('pd').appendChild(d)});
+$('pv').onclick=function(){setP((cur+P.length-1)%P.length)};$('nx').onclick=function(){setP((cur+1)%P.length)};
+var tm;code.addEventListener('input',function(){clearTimeout(tm);tm=setTimeout(function(){build(code.value)},450)});
+code.addEventListener('keydown',function(e){if(e.key==='Tab'){e.preventDefault();var s=code.selectionStart;code.value=code.value.slice(0,s)+'  '+code.value.slice(code.selectionEnd);code.selectionStart=code.selectionEnd=s+2;code.dispatchEvent(new Event('input'))}});
+$('sp').oninput=function(){speed=+this.value};$('sc').oninput=function(){scale=+this.value};
+addEventListener('pointermove',function(e){tmx=e.clientX/innerWidth;tmy=1-e.clientY/innerHeight});
+var t0=performance.now()/1000;
+addEventListener('pointerdown',function(e){if(e.target.closest('textarea,input,button,a,.dock'))return;click=[e.clientX/innerWidth,1-e.clientY/innerHeight,performance.now()/1000-t0]});
+addEventListener('keydown',function(e){var t=document.activeElement.tagName;if(t==='TEXTAREA'||t==='INPUT')return;var k=e.key;if(k==='ArrowLeft')$('pv').click();else if(k==='ArrowRight')$('nx').click();else if(k>='1'&&k<='4')setPal(+k-1);else if(k==='r'||k==='R')rainbow=!rainbow});
+function hr(c,a){var ca=Math.cos(a),sa=Math.sin(a),r=c[0],g=c[1],b=c[2];return[(.299+.701*ca+.168*sa)*r+(.587-.587*ca+.33*sa)*g+(.114-.114*ca-.497*sa)*b,(.299-.299*ca-.328*sa)*r+(.587+.413*ca+.035*sa)*g+(.114-.114*ca+.292*sa)*b,(.299-.3*ca+1.25*sa)*r+(.587-.588*ca-1.05*sa)*g+(.114+.886*ca-.203*sa)*b]}
+var q=innerWidth<700?.5:.62,last=performance.now(),fc=0,fa=last,red=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function size(){cv.width=Math.max(2,Math.floor(innerWidth*q));cv.height=Math.max(2,Math.floor(innerHeight*q));if(ok)gl.viewport(0,0,cv.width,cv.height)}size();addEventListener('resize',size);
+function frame(now){requestAnimationFrame(frame);if(!ok||!prog)return;var dt=now-last;last=now;fc++;if(now-fa>1000){$('fp').textContent=fc+' fps';fc=0;fa=now}
+ mx+=(tmx-mx)*.08;my+=(tmy-my)*.08;if(rainbow)hue+=dt*.0009;var T=now/1000-t0;
+ gl.uniform2f(U.u_res,cv.width,cv.height);gl.uniform2f(U.u_mouse,mx,my);gl.uniform1f(U.u_time,T);gl.uniform1f(U.u_scroll,scrollY*.0006);gl.uniform1f(U.u_speed,red?speed*.15:speed);gl.uniform1f(U.u_scale,scale);gl.uniform3f(U.u_click,click[0],click[1],click[2]);
+ PL[pal][1].forEach(function(h,i){var c=rgb(h);if(rainbow)c=hr(c,hue);gl.uniform3f(U['u_c'+i],c[0],c[1],c[2])});gl.drawArrays(gl.TRIANGLES,0,3)}
+// tiles
+document.querySelectorAll('.tile').forEach(function(t){t.addEventListener('pointermove',function(e){var r=t.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;t.style.setProperty('--mx',(x*100)+'%');t.style.setProperty('--my',(y*100)+'%');t.style.setProperty('--ry',((x-.5)*6)+'deg');t.style.setProperty('--rx',(-(y-.5)*6)+'deg')});t.addEventListener('pointerleave',function(){t.style.setProperty('--rx','0deg');t.style.setProperty('--ry','0deg')})});
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');e.target.querySelectorAll('[data-c]').forEach(function(n){var to=+n.dataset.c,s=performance.now();(function f(t){var k=Math.min(1,(t-s)/1400);n.textContent=Math.round(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(f)})(s)});io.unobserve(e.target)}})},{threshold:.15});
+document.querySelectorAll('.tile').forEach(function(t,i){t.style.transitionDelay=((i%3)*.08)+'s';io.observe(t)});
+// previews
+var fr=[].slice.call(document.querySelectorAll('.fr')).map(function(w){var f=document.createElement('iframe');f.title='Live preview';f.tabIndex=-1;f.setAttribute('aria-hidden','true');f.setAttribute('referrerpolicy','no-referrer');f.setAttribute('sandbox','allow-scripts allow-same-origin');w.appendChild(f);f.onload=function(){if(f.src)w.classList.add('live')};return{w:w,f:f}});
+function fit(){fr.forEach(function(o){var k=o.w.clientWidth/1280;o.f.style.height=(o.w.clientHeight/k)+'px';o.f.style.transform='scale('+k+')'})}fit();addEventListener('resize',fit);
+var fio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var o=fr.filter(function(o){return o.w===e.target})[0];if(o&&!o.f.src)o.f.src=o.w.dataset.u;fio.unobserve(e.target)}})},{rootMargin:'60% 0px'});fr.forEach(function(o){fio.observe(o.w)});
+// boot
+setPal(0);setP(0);requestAnimationFrame(frame);
+var p=0,rdy=false,s0=performance.now(),ls=[].slice.call($('ll').children);document.fonts&&document.fonts.ready.then(function(){rdy=true});if(!document.fonts)rdy=true;
+var iv=setInterval(function(){var e=performance.now()-s0;p=Math.min(e>2200&&rdy?100:96,p+1+(Math.random()*5|0));$('lb').style.width=p+'%';ls.forEach(function(l,i){if(p>i*24)l.classList.add('on')});
+ if(p>=100){clearInterval(iv);setTimeout(function(){var ld=$('ld'),s=performance.now(),mx2=Math.hypot(innerWidth,innerHeight)/2+20;ld.classList.add('x');document.body.classList.add('ready');(function f(t){var k=Math.min(1,(t-s)/1500),e=1-Math.pow(1-k,3);ld.style.setProperty('--r',(mx2*e)+'px');if(k<1)requestAnimationFrame(f);else ld.remove()})(s)},350)}},55);
+})();
+</script>
+</body>
+</html>
